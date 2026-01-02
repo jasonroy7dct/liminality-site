@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Favicon -->
+  <link
+    rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠🧩💭</text></svg>"
+  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rumination Breaker</title>
+
+  <!-- Prevent indexing (private tool) -->
+  <meta name="robots" content="noindex,nofollow" />
+
+  <link rel="stylesheet" href="./rumination.css" />
+</head>
+<body>
+  <div class="app">
+    <aside id="rb-sidebar" class="sidebar" aria-label="Navigation">
+      <a class="side-home" href="#rb-top">
+        <div class="side-head">
+          <div class="side-logo" aria-hidden="true">🧠</div>
+          <div class="side-title">Rumination</div>
+          <div class="side-sub">Breaker</div>
+        </div>
+      </a>      
+
+      <nav class="side-nav">
+        <a class="side-link" href="#rb-section-input">Input</a>
+        <a class="side-link" href="#rb-section-output">Output</a>
+        <a class="side-link" href="#rb-section-history">History</a>
+      </nav>
+
+      <div class="side-foot">
+        <div class="side-meta">Local-first • Private</div>
+        <button id="rb-sidebar-close" class="side-close" type="button">Close</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <main id="rb-top" class="page dashboard">
+        <header class="topbar">
+          <button id="rb-sidebar-toggle" class="iconbtn" type="button" aria-label="Open menu" title="Menu">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+
+          <div class="brand">
+            <div class="logo" aria-hidden="true">🧠</div>
+            <div>
+              <div class="kicker">Private tool</div>
+              <h1 class="title">Rumination Breaker</h1>
+            </div>
+          </div>
+
+          <div class="topbar-right">
+            <div class="pill" title="Stored locally">Local memory</div>
+            <div class="pill accent" title="AI-assisted">AI agent</div>
+          </div>
+        </header>
+
+        <p class="subtitle">Paste what’s looping in your head. The agent will name the pattern and reduce it to one doable action.</p>
+
+        <section class="kpis" aria-label="Overview">
+          <div class="kpi">
+            <div class="kpi-label">Total entries</div>
+            <div id="rb-kpi-total" class="kpi-value">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Top pattern</div>
+            <div id="rb-kpi-top" class="kpi-value">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Last run</div>
+            <div id="rb-kpi-last" class="kpi-value">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Done today</div>
+            <div id="rb-kpi-done" class="kpi-value">0</div>
+          </div>
+        </section>
+
+        <section class="card" id="rb-theme">
+          <div class="cardhead">
+            <h2 class="h2">Appearance</h2>
+            <span class="small">Customize colors</span>
+          </div>
+
+          <div class="row wrap">
+            <label class="smalltext">Primary</label>
+            <input id="rb-color-primary" class="input color" type="color" value="#2563eb" />
+            <label class="smalltext">Accent</label>
+            <input id="rb-color-accent" class="input color" type="color" value="#6366f1" />
+            <button id="rb-theme-reset" class="btn" type="button">Reset</button>
+          </div>
+          <p class="smalltext">Tip: changes are stored locally in your browser.</p>
+        </section>
+
+        <section class="card" id="rb-section-input">
+          <label class="label" for="rb-input">What keeps looping right now?</label>
+          <textarea id="rb-input" class="textarea" rows="7" placeholder="Type/paste your thoughts here…"></textarea>
+          <div class="row between">
+            <div class="muted smalltext"><span id="rb-count">0</span> chars</div>
+            <div class="muted smalltext">Tip: aim for 2–6 sentences.</div>
+          </div>
+
+          <div class="chips" aria-label="Quick start">
+            <button class="chip" type="button" data-template="career">Career loop</button>
+            <button class="chip" type="button" data-template="money">Money loop</button>
+            <button class="chip" type="button" data-template="relationship">Relationship loop</button>
+            <button class="chip" type="button" data-template="health">Health loop</button>
+            <button class="chip subtle" type="button" data-template="blank">Clear + start</button>
+          </div>
+
+          <div class="row">
+            <select id="rb-lang" class="select" aria-label="Output language">
+              <option value="auto">Auto</option>
+              <option value="zh-Hant">繁體中文</option>
+              <option value="en">English</option>
+            </select>
+            <button id="rb-run" class="btn primary" type="button">Analyze</button>
+            <button id="rb-redo-strict" class="btn" type="button" disabled>Redo (strict)</button>
+            <button id="rb-save" class="btn" type="button" disabled>Save</button>
+            <button id="rb-save-done" class="btn primary" type="button" disabled>Save &amp; Mark done</button>
+            <button id="rb-clear" class="btn danger" type="button">Clear</button>
+          </div>
+
+          <p id="rb-status" class="status" aria-live="polite"></p>
+          <details class="hint">
+            <summary>Privacy note</summary>
+            <p>Your history is stored in your browser (localStorage). Nothing is published. The AI request only includes the current text plus short summaries of up to 3 similar past entries.</p>
+          </details>
+        </section>
+
+        <section class="grid" id="rb-section-output">
+          <div class="card">
+            <div class="cardhead">
+              <h2 class="h2">Similar past loops</h2>
+              <div class="small">Top 3 matches from your local history</div>
+
+              <div class="row wrap simtools" aria-label="Similarity mode">
+                <label class="small" for="rb-sim-mode">Similarity:</label>
+                <select id="rb-sim-mode" class="select">
+                  <option value="mixed">混合</option>
+                  <option value="zh">只中文</option>
+                  <option value="en">只英文</option>
+                </select>
+              </div>
+            </div>
+            <div id="rb-memories" class="list"></div>
+          </div>
+
+          <div class="card">
+            <div class="cardhead">
+              <h2 class="h2">Agent output</h2>
+              <div class="small">Structured, time-boxed, one action only</div>
+            </div>
+
+            <div id="rb-insights" class="insights muted"></div>
+
+            <div id="rb-output" class="output empty">
+              <p class="muted">Run the agent to see results here.</p>
+            </div>
+
+            <div class="row wrap outtools" aria-label="Copy tools">
+              <button id="rb-copy-action" class="btn" type="button" disabled>Copy action</button>
+              <button id="rb-copy-followup" class="btn" type="button" disabled>Copy follow-up</button>
+              <button id="rb-copy-json" class="btn" type="button" disabled>Copy JSON</button>
+            </div>
+
+            <div class="row">
+              <button id="rb-export" class="btn" type="button">Export</button>
+              <label class="btn filebtn" for="rb-import">Import</label>
+              <input id="rb-import" class="fileinput" type="file" accept="application/json" />
+              <button id="rb-wipe" class="btn danger" type="button">Wipe history</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" id="rb-section-history">
+          <div class="cardhead">
+            <h2 class="h2">History</h2>
+            <div class="small">Stored locally. Search and filter.</div>
+          </div>
+
+          <div class="row wrap">
+            <input id="rb-search" class="input" type="text" placeholder="Search…" />
+            <select id="rb-filter" class="select">
+              <option value="all">All</option>
+              <option value="comparison">comparison</option>
+              <option value="future_projection">future_projection</option>
+              <option value="perfectionism">perfectionism</option>
+              <option value="uncertainty_loop">uncertainty_loop</option>
+              <option value="identity_threat">identity_threat</option>
+              <option value="other">other</option>
+            </select>
+            <select id="rb-status-filter" class="select">
+              <option value="all">All</option>
+              <option value="pinned">Pinned</option>
+              <option value="todo">To do</option>
+              <option value="done">Done</option>
+            </select>
+            <select id="rb-sort" class="select">
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+            </select>
+          </div>
+
+          <div class="row wrap pager" aria-label="Pagination">
+            <button id="rb-page-prev" class="btn" type="button">Prev</button>
+            <div class="small" id="rb-page-info">Page 1</div>
+            <button id="rb-page-next" class="btn" type="button">Next</button>
+            <select id="rb-page-size" class="select" aria-label="Page size">
+              <option value="10">10 / page</option>
+              <option value="20">20 / page</option>
+              <option value="50">50 / page</option>
+            </select>
+          </div>
+
+          <div class="row wrap bulktools" aria-label="Bulk actions">
+            <button id="rb-select-page" class="btn" type="button">Select page</button>
+            <button id="rb-clear-selection" class="btn" type="button" disabled>Clear selection</button>
+            <button id="rb-delete-selected" class="btn danger" type="button" disabled>Delete selected</button>
+            <button id="rb-delete-filtered" class="btn danger" type="button">Delete filtered</button>
+            <div class="small" id="rb-selection-info">0 selected</div>
+          </div>
+
+          <div id="rb-history" class="history"></div>
+        </section>
+
+        <footer class="footer">
+          <p class="muted">MVP <span id="rb-version">v1.0</span> · Built for private use. </p>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <div id="rb-backdrop" class="backdrop" aria-hidden="true"></div>
+
+  <div id="rb-modal" class="modal hidden" aria-hidden="true" role="dialog" aria-modal="true">
+    <div id="rb-modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-card" role="document" aria-label="Entry preview">
+      <div class="modal-head">
+        <div>
+          <div class="h3" id="rb-modal-title">Entry</div>
+          <div class="small" id="rb-modal-meta"></div>
+        </div>
+        <button id="rb-modal-close" class="iconbtn modal-close" type="button" aria-label="Close">×</button>
+      </div>
+
+      <div class="modal-body" id="rb-modal-body"></div>
+
+      <div class="row wrap modal-actions">
+        <button id="rb-modal-copy" class="btn" type="button">Copy</button>
+        <button id="rb-modal-delete" class="btn danger" type="button">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="rb-toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="./rumination.js" defer></script>
+</body>
+</html>

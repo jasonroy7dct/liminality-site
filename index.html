@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>jasonroy7dct</title>
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🌊</text></svg>'
+    />
+
+    <script>
+      (function () {
+        var p = location.pathname.replace(/\/+$/, "") || "/";
+        var route =
+          p === "/blog"
+            ? "blog"
+            : p === "/podcast"
+            ? "podcast"
+            : p === "/projects"
+            ? "projects"
+            : "home";
+
+        document.documentElement.classList.add("booting");
+        document.documentElement.setAttribute("data-route", route);
+      })();
+    </script>
+
+    <link rel="stylesheet" href="/styles.css" />
+
+    <!-- Minimal CSS overrides for avatar placement + About layout -->
+    <style>
+      /* Brand (nav left) */
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        min-width: 0;
+      }
+
+      .nav-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        object-fit: cover;
+        flex: 0 0 auto;
+        background: #f3f3f3;
+        border: 1px solid #e6e6e6;
+      }
+
+      /* About: keep text width stable and overlay avatar */
+      .about-content {
+        position: relative;
+      }
+
+      .about-with-avatar {
+        position: relative;
+        padding-right: 6.2rem; /* reserve space so text won't get squeezed */
+      }
+
+      .about-title {
+        margin: 0 0 1rem 0;
+      }
+
+      .about-avatar {
+        width: 104px;
+        height: 104px;
+        border-radius: 999px;
+        object-fit: cover;
+        position: absolute;
+        right: 0;
+        top: -54px; /* overlap banner a bit */
+        border: 2px solid #ffffff;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+        background: #f3f3f3;
+      }
+
+      @media (max-width: 600px) {
+        .about-with-avatar {
+          padding-right: 5.2rem;
+        }
+
+        .about-avatar {
+          width: 88px;
+          height: 88px;
+          top: -44px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav>
+      <div class="container nav-inner">
+        <div class="brand">
+          <img class="nav-avatar" src="/img/avatar.jpg" alt="Jason Hsieh" />
+          <a class="logo" href="/" data-route="/">jasonroy7dct</a>
+        </div>
+
+        <!-- Desktop nav -->
+        <ul class="nav-links" aria-label="Primary navigation">
+          <li><a href="/" data-route="/">Home</a></li>
+          <li><a href="/blog" data-route="/blog">Blog</a></li>
+          <li><a href="/podcast" data-route="/podcast">Podcast</a></li>
+          <li><a href="/projects" data-route="/projects">Projects</a></li>
+          <li><a href="/rumination/">Rumination</a></li>
+        </ul>
+
+        <!-- Mobile menu icon (hamburger) -->
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">
+          <span class="nav-toggle-bars" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <!-- Mobile sidebar drawer -->
+      <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+        <div class="nav-drawer-backdrop" data-nav-close="1"></div>
+        <aside class="nav-drawer-panel" role="dialog" aria-label="Mobile navigation" aria-modal="true">
+          <div class="nav-drawer-header">
+            <div class="nav-drawer-title">Menu</div>
+            <button class="nav-drawer-close" type="button" aria-label="Close menu" data-nav-close="1">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+
+          <ul class="nav-drawer-links" aria-label="Mobile navigation links">
+            <li><a href="/" data-route="/">Home</a></li>
+            <li><a href="/blog" data-route="/blog">Blog</a></li>
+            <li><a href="/podcast" data-route="/podcast">Podcast</a></li>
+            <li><a href="/projects" data-route="/projects">Projects</a></li>
+            <li><a href="/rumination/">Rumination</a></li>
+          </ul>
+
+          <!-- Mobile menu button (only visible on small screens) -->
+          <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false">
+            <span class="menu-icon" aria-hidden="true"></span>
+          </button>
+        </aside>
+      </div>
+    </nav>
+
+    <!-- Mobile drawer (rendered outside nav to avoid transformed ancestor issues) -->
+    <div class="drawer" id="mobileDrawer" aria-hidden="true">
+      <div class="drawer-overlay" id="drawerOverlay" data-close="1"></div>
+
+      <aside class="drawer-panel" role="dialog" aria-label="Navigation menu" aria-modal="true">
+        <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close menu">
+          <span aria-hidden="true">×</span>
+        </button>
+
+        <div class="drawer-links" id="drawerLinks"></div>
+      </aside>
+    </div>
+
+    <div class="app-shell">
+      <main id="app" class="container app">
+        <!-- HOME PAGE (banner + about only) -->
+        <section id="page-home" class="page" data-page="home" aria-hidden="true">
+          <div class="nyc-banner">
+            <div class="nyc-banner-inner">
+              <h1 class="type-target" data-type-speed="28">jasonroy7dct</h1>
+              <p class="banner-subtitle type-target processing" data-type-speed="18">
+                A small corner for writing, building, and audio.
+              </p>
+            </div>
+          
+            <!-- Banner avatar (bottom-right) -->
+            <img class="banner-avatar" src="/img/avatar.jpg" alt="Jason Hsieh" />
+          </div>          
+
+          <section class="section section-about">
+            <div class="about-content">
+              <div class="about-text about-with-avatar">
+                <h2 class="about-title">About</h2>
+
+                <p>
+                  "jasonroy7dct", a person who writes something, builds small systems, works in tech, and records a
+                  podcast about life abroad. Currently in the U.S. liminality as a software engineer, but want to
+                  build more...versions and transitions.
+                </p>
+                <p>
+                  I like clean design, simple pages, and projects that feel personal. This site is a living notebook,
+                  recording my thoughts and dreams...
+                </p>
+
+                <h3>Where I am</h3>
+
+                <p><strong>On the road</strong></p>
+                <p>
+                  Ｍyself on the road in DCT, and still moving. I write to keep track of what I learn, what I feel, and
+                  what I’m becoming.
+                </p>
+
+                <p style="margin-top: 0.9rem;"><strong>Liminality</strong></p>
+                <p>
+                  Right now I’m living in a liminal chapter, between versions of myself. Some days it feels clear, some
+                  days it’s just fog as hack, but I’m choosing to stay present and continue.
+                </p>
+
+                <p style="margin-top: 0.9rem;"><strong>Rooted, relocating</strong></p>
+                <p>
+                  Rooted from Taiwan, currently in the U.S. I’m still “dcting”, exploring work, identity, and what kind
+                  of life I want to build next. But living in the moment...
+                </p>
+
+                <p style="margin-top: 0.9rem;"><strong>What’s next</strong></p>
+                <p>
+                  I’ll keep writing, shipping small projects, and recording conversations, until the next direction
+                  reveals itself, one honest step at a time. It's a journey, and always missing and missing.
+                </p>
+
+                <div class="social-links" aria-label="Social links">
+                  <a
+                    class="social-link"
+                    href="https://www.linkedin.com/in/jason-po-hsuan-hsieh/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="LinkedIn"
+                    title="LinkedIn"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path
+                        d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5ZM.5 23.5h4V7.98h-4V23.5ZM8 7.98h3.83v2.12h.05c.53-1 1.83-2.06 3.77-2.06 4.03 0 4.78 2.65 4.78 6.09v9.37h-4v-8.31c0-1.98-.04-4.53-2.76-4.53-2.76 0-3.18 2.16-3.18 4.39v8.45H8V7.98Z"
+                      />
+                    </svg>
+                  </a>
+
+                  <a
+                    class="social-link"
+                    href="https://jasonroy7dct.medium.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Medium"
+                    title="Medium"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path
+                        d="M4.5 6.6c.06-.58-.16-1.16-.58-1.56L2.4 3.2V2.5h6.2l4.8 10.5 4.2-10.5H22v.7l-1.3 1.25c-.26.19-.39.51-.33.82v12.2c-.06.31.07.63.33.82l1.27 1.25v.7h-6.4v-.7l1.32-1.29c.13-.13.13-.17.13-.37V8.1l-3.66 9.2h-.5L8.5 8.1v8.1c-.08.42.05.86.34 1.18l1.72 2.08v.7H4v-.7l1.72-2.08c.29-.32.41-.76.32-1.18V6.6Z"
+                      />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- BLOG LIST PAGE -->
+        <section id="page-blog" class="page" data-page="blog" aria-hidden="true">
+          <header class="page-header">
+            <h2>Blog</h2>
+            <p class="muted">Short essays, notes, and Medium imports.</p>
+          </header>
+
+          <div id="blogGrid" class="blog-grid" aria-label="Blog posts list"></div>
+        </section>
+
+        <!-- BLOG POST PAGE -->
+        <section id="page-post" class="page blog-post" data-page="post" aria-hidden="true">
+          <header class="post-header">
+            <h1 id="postTitle">(Title)</h1>
+            <div id="postMeta" class="post-meta"></div>
+          </header>
+
+          <article id="postContent" class="post-content"></article>
+
+          <div class="page-actions">
+            <button class="btn btn-secondary" id="postBackBtn" type="button">← Back</button>
+          </div>
+        </section>
+
+        <!-- PODCAST PAGE -->
+        <section id="page-podcast" class="page" data-page="podcast" aria-hidden="true">
+          <header class="page-header">
+            <h2>Podcast</h2>
+            <p class="muted">
+              Latest episodes from
+              <a
+                href="https://open.spotify.com/show/5aZFp6Y2vO92Ogv4oElvYH"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-link"
+              >
+                ca.tx.goblins
+              </a>
+            </p>
+          </header>
+
+          <div class="section">
+            <h3 class="section-title">Recent</h3>
+            <div id="recentEpisodesGrid" class="podcast-grid"></div>
+          </div>
+
+          <div class="section">
+            <h3 class="section-title">All Episodes</h3>
+            <div id="allEpisodesGrid" class="podcast-grid"></div>
+          </div>
+        </section>
+
+        <!-- EPISODE PAGE -->
+        <section id="page-episode" class="page episode-page" data-page="episode" aria-hidden="true">
+          <header class="episode-header">
+            <h1 id="episodeTitle">(Episode)</h1>
+            <div id="episodeMeta" class="episode-meta"></div>
+          </header>
+
+          <p id="episodeDescription" class="episode-description"></p>
+
+          <div id="spotifyEmbedContainer" class="spotify-player"></div>
+
+          <div class="episode-actions">
+            <button class="btn" id="spotifyLinkBtn" type="button">Open in Spotify</button>
+            <button class="btn btn-secondary" id="episodeBackBtn" type="button">← Back</button>
+          </div>
+        </section>
+
+        <!-- PROJECTS PAGE -->
+        <section id="page-projects" class="page" data-page="projects" aria-hidden="true">
+          <header class="page-header projects-header">
+            <h2>Projects</h2>
+            <p class="muted">All the dots.</p>
+          </header>
+
+          <div class="projects-wide">
+            <div class="travel-grid" aria-label="Travel gallery">
+              <button class="travel-card" type="button" data-full="/img/nyc-01.jpg" data-caption="New York City">
+                <img src="/img/nyc-01.jpg" alt="New York City" loading="lazy" />
+                <span class="travel-caption">New York City</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/brooklyn-01.jpg" data-caption="Brooklyn, NYC">
+                <img src="/img/brooklyn-01.jpg" alt="Brooklyn" loading="lazy" />
+                <span class="travel-caption">Brooklyn, NYC</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/la-01.jpg" data-caption="Los Angeles">
+                <img src="/img/la-01.jpg" alt="Los Angeles" loading="lazy" />
+                <span class="travel-caption">Los Angeles</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/keywest-01.jpg" data-caption="Key West">
+                <img src="/img/keywest-01.jpg" alt="Key West" loading="lazy" />
+                <span class="travel-caption">Key West</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/nyc-02.jpg" data-caption="New York City">
+                <img src="/img/nyc-02.jpg" alt="New York City" loading="lazy" />
+                <span class="travel-caption">New York City</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/la-02.jpg" data-caption="Los Angeles">
+                <img src="/img/la-02.jpg" alt="Los Angeles" loading="lazy" />
+                <span class="travel-caption">Los Angeles</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/brooklyn-02.jpg" data-caption="Brooklyn, NYC">
+                <img src="/img/brooklyn-02.jpg" alt="Brooklyn" loading="lazy" />
+                <span class="travel-caption">Brooklyn, NYC</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/nyc-03.jpg" data-caption="New York City">
+                <img src="/img/nyc-03.jpg" alt="New York City" loading="lazy" />
+                <span class="travel-caption">New York City</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/keywest-02.jpg" data-caption="Key West">
+                <img src="/img/keywest-02.jpg" alt="Key West" loading="lazy" />
+                <span class="travel-caption">Key West</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/la-03.jpg" data-caption="Los Angeles">
+                <img src="/img/la-03.jpg" alt="Los Angeles" loading="lazy" />
+                <span class="travel-caption">Los Angeles</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/brooklyn-03.jpg" data-caption="Brooklyn, NYC">
+                <img src="/img/brooklyn-03.jpg" alt="Brooklyn" loading="lazy" />
+                <span class="travel-caption">Brooklyn, NYC</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/nyc-04.jpg" data-caption="New York City">
+                <img src="/img/nyc-04.jpg" alt="New York City" loading="lazy" />
+                <span class="travel-caption">New York City</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/la-04.jpg" data-caption="Los Angeles">
+                <img src="/img/la-04.jpg" alt="Los Angeles" loading="lazy" />
+                <span class="travel-caption">Los Angeles</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/keywest-03.jpg" data-caption="Key West">
+                <img src="/img/keywest-03.jpg" alt="Key West" loading="lazy" />
+                <span class="travel-caption">Key West</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/nyc-05.jpg" data-caption="New York City">
+                <img src="/img/nyc-05.jpg" alt="New York City" loading="lazy" />
+                <span class="travel-caption">New York City</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/brooklyn-04.jpg" data-caption="Brooklyn, NYC">
+                <img src="/img/brooklyn-04.jpg" alt="Brooklyn" loading="lazy" />
+                <span class="travel-caption">Brooklyn, NYC</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/la-05.jpg" data-caption="Los Angeles">
+                <img src="/img/la-05.jpg" alt="Los Angeles" loading="lazy" />
+                <span class="travel-caption">Los Angeles</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/nyc-06.jpg" data-caption="New York City">
+                <img src="/img/nyc-06.jpg" alt="New York City" loading="lazy" />
+                <span class="travel-caption">New York City</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/keywest-04.jpg" data-caption="Key West">
+                <img src="/img/keywest-04.jpg" alt="Key West" loading="lazy" />
+                <span class="travel-caption">Key West</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/la-06.jpg" data-caption="Los Angeles">
+                <img src="/img/la-06.jpg" alt="Los Angeles" loading="lazy" />
+                <span class="travel-caption">Los Angeles</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/brooklyn-05.jpg" data-caption="Brooklyn, NYC">
+                <img src="/img/brooklyn-05.jpg" alt="Brooklyn" loading="lazy" />
+                <span class="travel-caption">Brooklyn, NYC</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/nyc-07.jpg" data-caption="New York City">
+                <img src="/img/nyc-07.jpg" alt="New York City" loading="lazy" />
+                <span class="travel-caption">New York City</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/la-07.jpg" data-caption="Los Angeles">
+                <img src="/img/la-07.jpg" alt="Los Angeles" loading="lazy" />
+                <span class="travel-caption">Los Angeles</span>
+              </button>
+
+              <button class="travel-card" type="button" data-full="/img/la-08.jpg" data-caption="Los Angeles">
+                <img src="/img/la-08.jpg" alt="Los Angeles" loading="lazy" />
+                <span class="travel-caption">Los Angeles</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <footer>
+          <p>© <span id="year"></span> jasonroy7dct</p>
+        </footer>
+
+        <!-- Travel preview modal -->
+        <div id="travelLightbox" class="lightbox" aria-hidden="true" role="dialog" aria-label="Photo preview">
+          <div class="lightbox-backdrop" data-close="1"></div>
+          <div class="lightbox-panel" role="document">
+            <button class="lightbox-close" type="button" aria-label="Close" data-close="1">×</button>
+            <img id="lightboxImg" src="" alt="" />
+            <div id="lightboxCaption" class="lightbox-caption"></div>
+          </div>
+        </div>
+
+        <script>
+          window.addEventListener("DOMContentLoaded", function () {
+            var lb = document.getElementById("travelLightbox");
+            var img = document.getElementById("lightboxImg");
+            var cap = document.getElementById("lightboxCaption");
+            if (!lb || !img || !cap) return;
+
+            function openLightbox(src, caption, alt) {
+              img.src = src;
+              img.alt = alt || caption || "Photo";
+              cap.textContent = caption || "";
+              lb.classList.add("is-open");
+              lb.setAttribute("aria-hidden", "false");
+              document.documentElement.classList.add("no-scroll");
+              document.body.classList.add("no-scroll");
+            }
+
+            function closeLightbox() {
+              lb.classList.remove("is-open");
+              lb.setAttribute("aria-hidden", "true");
+              document.documentElement.classList.remove("no-scroll");
+              document.body.classList.remove("no-scroll");
+              img.src = "";
+            }
+
+            document.addEventListener("click", function (e) {
+              var card = e.target.closest(".travel-card");
+              if (card && card.dataset && card.dataset.full) {
+                e.preventDefault();
+                openLightbox(card.dataset.full, card.dataset.caption || "", card.querySelector("img")?.alt || "");
+                return;
+              }
+
+              var closeEl = e.target.closest("[data-close]");
+              if (closeEl && lb.classList.contains("is-open")) {
+                e.preventDefault();
+                closeLightbox();
+              }
+            });
+
+            document.addEventListener("keydown", function (e) {
+              if (e.key === "Escape" && lb.classList.contains("is-open")) {
+                closeLightbox();
+              }
+            });
+          });
+        </script>
+      </main>
+    </div>
+
+    <script src="/posts.js"></script>
+    <script src="/main.js"></script>
+  </body>
+</html>
