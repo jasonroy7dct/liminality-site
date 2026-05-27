@@ -16,3 +16,11 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+[[redirects]]
+  from = "/signal.xml"
+  to = "/.netlify/functions/signal-rss"
+  status = 200
+
+[functions."signal-scheduled"]
+  schedule = "30 22 * * *"

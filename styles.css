@@ -7,16 +7,23 @@
 
 :root {
   /* Global layout tuning */
-  --page-max: 720px; /* narrower content to increase side whitespace */
+  --page-max: 680px; /* narrower content to increase side whitespace */
   --page-pad: 2rem;
 
-  --radius: 12px;
-  --radius-sm: 10px;
-  --border: 1px solid #e0e0e0;
-  --bg: #ffffff;
-  --muted: #666;
-  --muted2: #999;
+  /* Geometric but slightly soft radius */
+  --radius: 4px;
+  --radius-sm: 2px;
+  
+  /* Warm editorial palette */
+  --border: 1px solid #ede8e4;
+  --bg: #fdfcfb;
+  --muted: #666666;
+  --muted2: #999999;
   --ink: #1a1a1a;
+
+  /* Typography */
+  --font-serif: "Newsreader", "Times New Roman", Times, serif;
+  --font-sans: "Inter", -apple-system, sans-serif;
 
   --dur-out: 180ms;
   --dur-in: 260ms;
@@ -24,10 +31,11 @@
 }
 
 body {
-  font-family: "Times New Roman", Times, serif;
-  line-height: 1.7;
+  font-family: var(--font-serif);
+  line-height: 1.75;
   color: var(--ink);
   background: var(--bg);
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Container */
@@ -66,9 +74,10 @@ nav {
 }
 
 .logo {
+  font-family: var(--font-sans);
   font-size: 1.1rem;
-  font-weight: bold;
-  letter-spacing: 1px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--ink);
   text-decoration: none;
 }
@@ -80,11 +89,13 @@ nav {
 }
 
 .nav-links a {
+  font-family: var(--font-sans);
   color: var(--ink);
   text-decoration: none;
-  font-size: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   padding: 0.45rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   transition: background 0.2s ease, opacity 0.2s ease;
 }
 

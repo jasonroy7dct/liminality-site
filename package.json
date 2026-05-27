@@ -4,6 +4,9 @@
     "dev": "npx netlify dev"
   },
   "dependencies": {
+    "@netlify/blobs": "^10.5.0",
+    "@supabase/supabase-js": "^2.90.0",
+    "resend": "^6.6.0",
     "rss-parser": "^3.13.0"
   }
 }

@@ -13,8 +13,11 @@
   const DRAFT_KEY = "rb_draft_v1";
   const SIM_KEY = "rb_sim_mode_v1";
   const PAGE_SIZE_KEY = "rb_page_size_v1";
+  const THREAD_BASE_KEY = "rb_thread_base_v1";
+  const THREAD_LAST_KEY = "rb_thread_last_v1";
+  const THREAD_CHAT_KEY = "rb_thread_chat_v1";
 
-  const VERSION = "1.0.4";
+  const VERSION = "1.1.2";
   const COOLDOWN_MS = 3500;
   const MAX_CURRENT_TEXT_CHARS = 4000;
   const MAX_ENTRIES = 200;
@@ -95,6 +98,13 @@
 
   let lastRunAt = 0;
   let lastResult = null;
+  let btnContinue = null;
+  let btnThreadReset = null;
+  let followPanel = null;
+  let followLog = null;
+  let followInput = null;
+  let followSend = null;
+  let followClose = null;
 
   const STOPWORDS = new Set([
     "the", "a", "an", "and", "or", "but", "if", "then", "so", "to", "of", "in", "on", "for", "with", "as", "at", "by",
@@ -194,6 +204,93 @@
   }
   function saveDraft(text) {
     try { sessionStorage.setItem(DRAFT_KEY, text || ""); } catch { }
+  }
+
+  /* ================================
+     Thread state (inline follow-up)
+     - Keeps a "base text" for the current loop and the last agent result.
+     - Keeps a lightweight chat log for the current page session.
+     ================================ */
+
+  function loadThreadBase() {
+    try { return sessionStorage.getItem(THREAD_BASE_KEY) || ""; } catch { return ""; }
+  }
+  function saveThreadBase(text) {
+    try { sessionStorage.setItem(THREAD_BASE_KEY, text || ""); } catch { }
+  }
+  function loadThreadLast() {
+    try {
+      const raw = sessionStorage.getItem(THREAD_LAST_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+  function saveThreadLast(obj) {
+    try { sessionStorage.setItem(THREAD_LAST_KEY, JSON.stringify(obj || null)); } catch { }
+  }
+  function loadThreadChat() {
+    try {
+      const raw = sessionStorage.getItem(THREAD_CHAT_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  }
+  function saveThreadChat(arr) {
+    try { sessionStorage.setItem(THREAD_CHAT_KEY, JSON.stringify(Array.isArray(arr) ? arr : [])); } catch { }
+  }
+  function resetThreadState() {
+    try { sessionStorage.removeItem(THREAD_BASE_KEY); } catch { }
+    try { sessionStorage.removeItem(THREAD_LAST_KEY); } catch { }
+    try { sessionStorage.removeItem(THREAD_CHAT_KEY); } catch { }
+  }
+
+  function summarizeAssistant(result) {
+    try {
+      const name = result?.name ? String(result.name).trim() : "";
+      const reframe = result?.reframe ? String(result.reframe).trim() : "";
+      const task = result?.one_action?.task ? String(result.one_action.task).trim() : "";
+      const tb = result?.one_action?.timebox_min != null ? String(result.one_action.timebox_min) : "";
+      const dod = result?.one_action?.definition_of_done ? String(result.one_action.definition_of_done).trim() : "";
+      const lines = [];
+      if (name) lines.push(name);
+      if (reframe) lines.push(reframe);
+      if (task) {
+        lines.push("Next action: " + task + (tb ? ` (${tb} min)` : ""));
+        if (dod) lines.push("Done when: " + dod);
+      }
+      return lines.join("\n").trim();
+    } catch {
+      return "";
+    }
+  }
+
+  function buildContinuationText(baseText, prev, userUpdate) {
+    const p = prev || {};
+    const oa = p.one_action || {};
+    const evidence = Array.isArray(p.evidence) ? p.evidence : [];
+
+    const blocks = [];
+    blocks.push("You are a Rumination Breaker coach. Continue the same loop based on the update below.");
+    blocks.push("");
+    blocks.push("[ORIGINAL TEXT]");
+    blocks.push(String(baseText || "").trim());
+    blocks.push("");
+    blocks.push("[LAST RESULT]");
+    blocks.push("pattern: " + String(p.pattern || ""));
+    blocks.push("name: " + String(p.name || ""));
+    if (evidence.length) blocks.push("evidence: " + evidence.map((x) => String(x)).join(" | "));
+    blocks.push("reframe: " + String(p.reframe || ""));
+    if (oa && (oa.task || oa.timebox_min || oa.definition_of_done)) {
+      blocks.push("one_action: " + String(oa.task || ""));
+      blocks.push("timebox_min: " + String(oa.timebox_min || ""));
+      blocks.push("definition_of_done: " + String(oa.definition_of_done || ""));
+    }
+    blocks.push("followup_question: " + String(p.followup_question || ""));
+    blocks.push("");
+    blocks.push("[USER UPDATE]");
+    blocks.push(String(userUpdate || "").trim());
+    blocks.push("");
+    blocks.push("Now return a NEW result in the SAME JSON schema as before. Prefer a smaller, more realistic next action if the user is stuck.");
+    return blocks.join("\n");
   }
 
   function loadPageSize() {
@@ -1129,6 +1226,9 @@
       if (!v.ok) throw new Error("Invalid agent response: " + v.errors.join(" "));
 
       lastResult = result;
+      ensureFollowupUi();
+      initThreadFromAnalyze(text, result);
+      setFollowupEnabled(true);
       if (elRedoStrict) elRedoStrict.disabled = false;
       renderOutput(result);
       renderInsights(result.pattern);
@@ -1165,6 +1265,9 @@
       if (!v.ok) throw new Error("Invalid agent response: " + v.errors.join(" "));
 
       lastResult = result;
+      ensureFollowupUi();
+      initThreadFromAnalyze(text, result);
+      setFollowupEnabled(true);
       renderOutput(result);
       renderInsights(result.pattern);
       toast("Strict redo complete.", "success");
@@ -1205,6 +1308,10 @@
     updateCount();
     setStatus("");
     lastResult = null;
+    resetThreadState();
+    ensureFollowupUi();
+    setFollowupEnabled(false);
+    if (followPanel) followPanel.classList.add("hidden");
     if (elSave) elSave.disabled = true;
     if (elSaveDone) elSaveDone.disabled = true;
     if (elRedoStrict) elRedoStrict.disabled = true;
@@ -1298,7 +1405,523 @@
     copyText(lastResult ? JSON.stringify(lastResult, null, 2) : "", "JSON copied.");
   });
 
+  
+
   /* ================================
+     Inline follow-up (chat-like continuation)
+     - No prompt() dialogs.
+     - The follow-up panel lives under the Output tools row.
+     ================================ */
+
+  function injectFollowupStyles() {
+    if (document.getElementById("rb-followup-style")) return;
+    const style = document.createElement("style");
+    style.id = "rb-followup-style";
+    style.textContent = `
+      .rb-followup{ margin-top: 12px; }
+      .rb-followup.hidden{ display: none; }
+      .rb-followup-head{ display:flex; align-items:center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+      .rb-followup-title{ font-weight: 900; letter-spacing: -0.01em; }
+      .rb-followup-sub{ font-size: 0.92rem; color: var(--muted); }
+      .rb-chatlog{
+        display:flex; flex-direction: column; gap: 10px;
+        max-height: 380px; overflow:auto;
+        padding: 8px 6px 8px 2px;
+        scroll-behavior: smooth;
+      }
+
+      /* Chat rows */
+      .rb-chatrow{ display:flex; flex-direction: column; gap: 4px; }
+      .rb-chatrow.user{ align-items: flex-end; }
+      .rb-chatrow.assistant{ align-items: flex-start; }
+      .rb-chatmeta{ display:flex; gap: 8px; color: var(--muted2); font-size: 0.78rem; padding: 0 6px; }
+      .rb-chatmeta .who{ font-weight: 700; color: var(--muted); }
+
+      /* Bubbles */
+      .rb-bubble{
+        max-width: min(680px, 92%);
+        border-radius: 18px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        background: var(--panel-2);
+        box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+      }
+      .rb-chatrow.user .rb-bubble{
+        background: color-mix(in srgb, var(--primary) 14%, var(--panel));
+        border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+      }
+      .rb-chatrow.assistant .rb-bubble{
+        background: var(--panel);
+      }
+      .rb-chattext{ white-space: pre-wrap; line-height: 1.55; }
+
+      .rb-details summary{ cursor: pointer; }
+
+      /* Compose */
+      .rb-followup-compose{ display:flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+      .rb-followup-hint{ font-size: 0.86rem; color: var(--muted); }
+      .rb-followup-actions{ display:flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+      .rb-followup-leftactions{ display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+
+      /* Assistant card inside bubble */
+      .rb-card{ border: 1px solid var(--border); background: var(--panel); border-radius: 14px; padding: 10px 12px; }
+      .rb-card-head{ display:flex; align-items:center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+      .rb-card-title{ font-weight: 900; letter-spacing: -0.01em; }
+      .rb-card-section{ margin-top: 10px; }
+      .rb-card-label{ font-size: 0.82rem; color: var(--muted2); margin-bottom: 6px; }
+      .rb-card-text{ white-space: pre-wrap; line-height: 1.55; }
+      .rb-card-list{ margin: 0; padding-left: 18px; }
+      .rb-card-list li{ margin: 4px 0; }
+
+      .rb-action{ border: 1px dashed var(--border); border-radius: 12px; padding: 10px; background: var(--panel-2); }
+      .rb-action-task{ font-weight: 900; margin-bottom: 6px; }
+      .rb-action-meta{ display:flex; gap: 8px; flex-wrap: wrap; align-items:center; }
+
+      .rb-msg-actions{ display:flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; justify-content: flex-end; }
+      .rb-msg-actions .btn{ padding: 6px 10px; }
+
+      /* Typing indicator */
+      .rb-typing{
+        display:flex; align-items:center; gap: 8px;
+        padding: 0 6px;
+        color: var(--muted2);
+        font-size: 0.82rem;
+      }
+      .rb-dots{ display:inline-flex; gap: 4px; }
+      .rb-dots span{
+        width: 6px; height: 6px;
+        border-radius: 999px;
+        background: var(--muted2);
+        opacity: 0.35;
+        animation: rbDot 1.2s infinite ease-in-out;
+      }
+      .rb-dots span:nth-child(2){ animation-delay: 0.15s; }
+      .rb-dots span:nth-child(3){ animation-delay: 0.3s; }
+      @keyframes rbDot{
+        0%, 80%, 100%{ transform: translateY(0); opacity: 0.35; }
+        40%{ transform: translateY(-2px); opacity: 0.9; }
+      }
+
+      @media (max-width: 560px){
+        .rb-bubble{ max-width: 96%; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function formatChatTs(iso) {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    } catch { return ""; }
+  }
+
+  
+  function renderAssistantCardHtml(result) {
+    const r = result || {};
+    const evidence = Array.isArray(r.evidence) ? r.evidence : [];
+    const oa = r.one_action || {};
+    const evHtml = evidence.length
+      ? "<ul class=\"rb-card-list\">" + evidence.map((x) => "<li>" + escapeHtml(String(x)) + "</li>").join("") + "</ul>"
+      : "<div class=\"muted\">—</div>";
+
+    const actionHtml = oa && (oa.task || oa.definition_of_done || oa.timebox_min != null)
+      ? `
+        <div class="rb-action">
+          <div class="rb-action-task">${escapeHtml(String(oa.task || ""))}</div>
+          <div class="rb-action-meta">
+            <span class="badge">Timebox: ${escapeHtml(String(oa.timebox_min ?? ""))} min</span>
+            <span class="badge">Done: ${escapeHtml(String(oa.definition_of_done || ""))}</span>
+          </div>
+        </div>
+      `
+      : "<div class=\"muted\">—</div>";
+
+    // Note: action buttons are wired via event delegation on the chat log.
+    return `
+      <div class="rb-card">
+        <div class="rb-card-head">
+          <span class="badge">${escapeHtml(String(r.pattern || "unknown"))}</span>
+          <span class="rb-card-title">${escapeHtml(String(r.name || ""))}</span>
+        </div>
+
+        <div class="rb-card-section">
+          <div class="rb-card-label">Evidence</div>
+          ${evHtml}
+        </div>
+
+        <div class="rb-card-section">
+          <div class="rb-card-label">One action</div>
+          ${actionHtml}
+        </div>
+
+        <div class="rb-card-section">
+          <div class="rb-card-label">Reframe</div>
+          <div class="rb-card-text">${escapeHtml(String(r.reframe || ""))}</div>
+        </div>
+
+        <div class="rb-card-section">
+          <div class="rb-card-label">Follow-up</div>
+          <div class="rb-card-text">${escapeHtml(String(r.followup_question || ""))}</div>
+        </div>
+
+        <div class="rb-msg-actions">
+          <button type="button" class="btn small ghost" data-rb-act="copy_action">Copy action</button>
+          <button type="button" class="btn small ghost" data-rb-act="copy_reframe">Copy reframe</button>
+          <button type="button" class="btn small ghost" data-rb-act="copy_json">Copy JSON</button>
+          <button type="button" class="btn small soft" data-rb-act="save">Save</button>
+          <button type="button" class="btn small soft" data-rb-act="save_done">Save + done</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderUserTextHtml(text) {
+    const t = String(text || "");
+    if (t.length <= 520) return `<div class="rb-chattext">${escapeHtml(t)}</div>`;
+    const head = escapeHtml(t.slice(0, 520) + "…");
+    const full = escapeHtml(t);
+    return `
+      <details class="rb-details">
+        <summary class="rb-chattext">${head}</summary>
+        <div class="rb-chattext" style="margin-top:8px;">${full}</div>
+      </details>
+    `;
+  }
+
+
+  
+  
+  function renderThreadChat() {
+    if (!followLog) return;
+    const chat = loadThreadChat();
+
+    if (!chat.length) {
+      followLog.innerHTML = '<p class="muted">No follow-ups yet. Add an update below to continue.</p>';
+      return;
+    }
+
+    followLog.innerHTML = chat.map((m, idx) => {
+      const role = m.role === "user" ? "user" : "assistant";
+      const who = role === "user" ? "You" : "Agent";
+      const ts = m.ts ? formatChatTs(m.ts) : "";
+
+      const meta = `<div class="rb-chatmeta"><span class="who">${escapeHtml(who)}</span><span>${escapeHtml(ts)}</span></div>`;
+
+      if (role === "assistant" && m.typing) {
+        return `
+          <div class="rb-chatrow assistant">
+            ${meta}
+            <div class="rb-bubble">
+              <div class="rb-typing"><span>Typing</span><span class="rb-dots"><span></span><span></span><span></span></span></div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (role === "assistant" && m.result && typeof m.result === "object") {
+        return `
+          <div class="rb-chatrow assistant" data-msg-idx="${idx}">
+            ${meta}
+            <div class="rb-bubble">
+              ${renderAssistantCardHtml(m.result)}
+            </div>
+          </div>
+        `;
+      }
+
+      const body = role === "user" ? renderUserTextHtml(m.text || "") : `<div class="rb-chattext">${escapeHtml(String(m.text || ""))}</div>`;
+      return `
+        <div class="rb-chatrow ${role}" data-msg-idx="${idx}">
+          ${meta}
+          <div class="rb-bubble">
+            ${body}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Auto-scroll to bottom
+    followLog.scrollTop = followLog.scrollHeight;
+  }
+
+  function appendThreadMsg(role, text, resultObj) {
+    const chat = loadThreadChat();
+    const msg = {
+      role: role === "user" ? "user" : "assistant",
+      ts: nowIso(),
+      text: String(text || "").trim(),
+    };
+  
+    if (msg.role === "assistant" && resultObj && typeof resultObj === "object") {
+      msg.result = resultObj;
+      // Keep a readable fallback text for export/debug
+      if (!msg.text) msg.text = summarizeAssistant(resultObj) || "";
+    }
+  
+    chat.push(msg);
+    saveThreadChat(chat);
+    renderThreadChat();
+  }  
+
+  
+  function initThreadFromAnalyze(baseText, result) {
+    const base = String(baseText || "").trim();
+    if (!base) return;
+    saveThreadBase(base);
+    saveThreadLast(result || null);
+
+    // Fresh chat for this base text
+    const chat = [];
+    chat.push({ role: "user", ts: nowIso(), text: base });
+    chat.push({ role: "assistant", ts: nowIso(), text: summarizeAssistant(result || {}) || "(no summary)", result: result || null });
+    saveThreadChat(chat);
+    renderThreadChat();
+  }
+
+
+  function setFollowupEnabled(enabled) {
+    if (btnContinue) btnContinue.disabled = !enabled;
+    if (btnThreadReset) btnThreadReset.disabled = false;
+    if (followSend) followSend.disabled = !enabled;
+    if (followInput) followInput.disabled = !enabled;
+  }
+
+  
+  function showTypingIndicator(show) {
+    const chat = loadThreadChat();
+    const hasTyping = chat.length && chat[chat.length - 1] && chat[chat.length - 1].typing;
+    if (show) {
+      if (!hasTyping) {
+        chat.push({ role: "assistant", ts: nowIso(), text: "", typing: true });
+        saveThreadChat(chat);
+        renderThreadChat();
+      }
+    } else {
+      if (hasTyping) {
+        chat.pop();
+        saveThreadChat(chat);
+        renderThreadChat();
+      }
+    }
+  }
+
+  function getLastAssistantResult() {
+    const chat = loadThreadChat();
+    for (let i = chat.length - 1; i >= 0; i--) {
+      const m = chat[i];
+      if (m && m.role === "assistant" && m.result) return m.result;
+    }
+    return lastResult;
+  }
+
+function ensureFollowupUi() {
+    injectFollowupStyles();
+
+    const tools = document.querySelector(".outtools");
+    if (!tools) return;
+
+    // Continue button
+    if (!btnContinue) {
+      btnContinue = document.createElement("button");
+      btnContinue.id = "rb-continue";
+      btnContinue.type = "button";
+      btnContinue.className = "btn small soft";
+      btnContinue.textContent = "Continue";
+      btnContinue.disabled = true;
+      tools.appendChild(btnContinue);
+    }
+
+    // Reset thread button
+    if (!btnThreadReset) {
+      btnThreadReset = document.createElement("button");
+      btnThreadReset.id = "rb-thread-reset";
+      btnThreadReset.type = "button";
+      btnThreadReset.className = "btn small ghost";
+      btnThreadReset.textContent = "Reset thread";
+      btnThreadReset.title = "Start a fresh loop from the next Analyze";
+      tools.appendChild(btnThreadReset);
+    }
+
+    // Follow-up panel (card)
+    if (!followPanel) {
+      followPanel = document.createElement("div");
+      followPanel.className = "card rb-followup hidden";
+      followPanel.innerHTML = `
+        <div class="rb-followup-head">
+          <div>
+            <div class="rb-followup-title">Follow-up</div>
+            <div class="rb-followup-sub">Add updates and continue the same loop (multi-turn).</div>
+          </div>
+          <div class="row" style="gap:10px; flex-wrap:nowrap;">
+            <button type="button" class="btn small ghost" id="rb-followup-close">Close</button>
+          </div>
+        </div>
+
+        <div class="rb-chatlog" id="rb-chatlog"></div>
+
+        <div class="rb-followup-compose">
+          <div class="rb-followup-hint">Enter to send · Shift+Enter for a new line</div>
+          <textarea id="rb-followup-input" class="textarea" rows="3"
+            placeholder="Type your update…"></textarea>
+          <div class="rb-followup-actions">
+            <button type="button" class="btn small soft" id="rb-followup-send">Send update</button>
+          </div>
+        </div>
+      `;
+
+      // Insert right after the tools row
+      tools.insertAdjacentElement("afterend", followPanel);
+
+      followLog = followPanel.querySelector("#rb-chatlog");
+      followInput = followPanel.querySelector("#rb-followup-input");
+      followSend = followPanel.querySelector("#rb-followup-send");
+      followClose = followPanel.querySelector("#rb-followup-close");
+
+      // Chat action buttons (event delegation)
+      if (followLog && !followLog._wired) {
+        followLog._wired = true;
+        followLog.addEventListener("click", async (ev) => {
+          const t = ev.target;
+          if (!(t instanceof Element)) return;
+          const btn = t.closest("button[data-rb-act]");
+          if (!btn) return;
+
+          const act = btn.getAttribute("data-rb-act") || "";
+          const row = btn.closest("[data-msg-idx]");
+          const msgIdx = row ? Number(row.getAttribute("data-msg-idx")) : NaN;
+
+          const chat = loadThreadChat();
+          const msg = Number.isFinite(msgIdx) ? chat[msgIdx] : null;
+          const result = (msg && msg.result) ? msg.result : getLastAssistantResult();
+
+          if (!result) return toast("No agent result found for this message.", "warn");
+
+          if (act === "copy_action") {
+            const a = result.one_action || {};
+            const txt = `${a.task || ""}\nTimebox: ${a.timebox_min ?? ""} min\nDone when: ${a.definition_of_done || ""}`.trim();
+            return copyText(txt, "Action copied.");
+          }
+
+          if (act === "copy_reframe") {
+            return copyText(String(result.reframe || ""), "Reframe copied.");
+          }
+
+          if (act === "copy_json") {
+            return copyText(JSON.stringify(result, null, 2), "JSON copied.");
+          }
+
+          if (act === "save" || act === "save_done") {
+            const base = loadThreadBase() || (elInput ? (elInput.value || "").trim() : "");
+            if (!base) return toast("No base text found.", "warn");
+            persistEntry(buildEntry(base, result, { done: act === "save_done" }));
+            renderHistory();
+            renderKpis();
+            return toast(act === "save_done" ? "Saved + done." : "Saved.", "success");
+          }
+        });
+      }
+
+      if (followClose) {
+        followClose.addEventListener("click", () => {
+          followPanel.classList.add("hidden");
+        });
+      }
+
+      if (followInput) {
+        followInput.addEventListener("keydown", (e) => {
+          if (e.isComposing || e.keyCode === 229) return;
+          if (e.key !== "Enter") return;
+          if (e.shiftKey) return; // newline
+          e.preventDefault();
+          if (followSend && !followSend.disabled) followSend.click();
+        });
+      }
+
+      if (followSend) {
+        followSend.addEventListener("click", async () => {
+          if (!lastResult) return toast("Run Analyze first.", "warn");
+          const base = loadThreadBase() || (elInput ? (elInput.value || "").trim() : "");
+          if (!base) return toast("Paste something first.", "warn");
+
+          const updateText = (followInput ? String(followInput.value || "").trim() : "");
+          if (!updateText) return toast("Type an update first.", "warn");
+
+          if (!canRun()) return setStatus("Slow down—cooldown is active.", "warn");
+
+          // Persist user update to chat immediately
+          appendThreadMsg("user", updateText);
+          showTypingIndicator(true);
+
+          // Clear input early
+          if (followInput) followInput.value = "";
+
+          lastRunAt = Date.now();
+          setBusy(true, "Continuing the same loop…");
+
+          try {
+            const entries = loadEntries();
+            const memories = topSimilarMemories(base, entries, 3);
+            renderMemories(memories);
+
+            const composed = buildContinuationText(base, lastResult, updateText);
+
+            setStatus("Calling agent…");
+            const result = await callAgent(composed, memories, false);
+            if (result && result.error) throw new Error(result.error);
+
+            const v = validateAgentResult(result);
+            if (!v.ok) throw new Error("Invalid agent response: " + v.errors.join(" "));
+
+            lastResult = result;
+            saveThreadBase(base);
+            saveThreadLast(result);
+
+            renderOutput(result);
+            renderInsights(result.pattern);
+
+            showTypingIndicator(false);
+            appendThreadMsg("assistant", "", result);
+            toast("Continued.", "success");
+            setStatus("Done.");
+          } catch (err) {
+            showTypingIndicator(false);
+            appendThreadMsg("assistant", "Error: " + (err?.message || String(err)));
+            setStatus("Error: " + (err?.message || String(err)), "danger");
+          } finally {
+            showTypingIndicator(false);
+            setBusy(false, "");
+          }
+        });
+      }
+    }
+
+    // Wire buttons (once)
+    if (!btnContinue._wired) {
+      btnContinue._wired = true;
+      btnContinue.addEventListener("click", () => {
+        if (!followPanel) return;
+        followPanel.classList.toggle("hidden");
+        renderThreadChat();
+        setTimeout(() => { if (followInput) followInput.focus(); }, 0);
+      });
+    }
+
+    if (!btnThreadReset._wired) {
+      btnThreadReset._wired = true;
+      btnThreadReset.addEventListener("click", () => {
+        resetThreadState();
+        renderThreadChat();
+        if (followPanel) followPanel.classList.add("hidden");
+        toast("Thread reset. Next Analyze starts fresh.", "success");
+        setFollowupEnabled(!!lastResult);
+      });
+    }
+
+    // Restore chat if any
+    renderThreadChat();
+  }
+/* ================================
      History actions (delegation)
      ================================ */
 
@@ -1455,6 +2078,8 @@
   renderKpis();
 
   initThemeUi();
+  ensureFollowupUi();
+  setFollowupEnabled(false);
 
   if (elVersion) elVersion.textContent = "v" + VERSION;
 

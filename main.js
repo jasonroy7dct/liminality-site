@@ -1,6 +1,6 @@
 /* main.js
    - Smooth page transitions (leave -> enter)
-   - History API routing: /blog, /blog/:id, /podcast, /podcast/:id, /projects
+   - History API routing: /blog, /blog/:id, /podcast, /podcast/:id, /projects, /signal
    - Fixes:
      1) Nav click during transition could desync nav vs page (now queued)
      2) Refresh on "/" could show only nav + footer (now forces correct active page on boot)
@@ -85,15 +85,16 @@ function initMobileDrawerNav() {
 
   /* Expose a safe closer for router hooks */
   window.__closeNavDrawer = closeDrawer;
-    /* Auto-close drawer when viewport becomes desktop */
-    function syncDrawerForDesktop() {
-      if (window.innerWidth > 720 && isOpen()) {
-        closeDrawer();
-      }
+
+  /* Auto-close drawer when viewport becomes desktop */
+  function syncDrawerForDesktop() {
+    if (window.innerWidth > 720 && isOpen()) {
+      closeDrawer();
     }
-  
-    window.addEventListener("resize", syncDrawerForDesktop);
-    window.addEventListener("orientationchange", syncDrawerForDesktop);  
+  }
+
+  window.addEventListener("resize", syncDrawerForDesktop);
+  window.addEventListener("orientationchange", syncDrawerForDesktop);
 }
 
 /* ---------------------------
@@ -107,6 +108,7 @@ const pages = {
   podcast: document.getElementById("page-podcast"),
   episode: document.getElementById("page-episode"),
   projects: document.getElementById("page-projects"),
+  signal: document.getElementById("page-signal"), // ✅ added
 };
 
 let activePageKey = "home";
@@ -124,6 +126,7 @@ function getPageKeyByPath(pathname) {
   if (p === "/podcast") return "podcast";
   if (p.startsWith("/podcast/")) return "episode";
   if (p === "/projects") return "projects";
+  if (p === "/signal") return "signal"; // ✅ added
   return "home";
 }
 
@@ -143,6 +146,7 @@ function updateNavActiveByPath(pathname = window.location.pathname) {
     if (route === "/blog") shouldActive = key === "blog" || key === "post";
     if (route === "/podcast") shouldActive = key === "podcast" || key === "episode";
     if (route === "/projects") shouldActive = key === "projects";
+    if (route === "/signal") shouldActive = key === "signal"; // ✅ added
 
     a.classList.toggle("active", shouldActive);
   });
@@ -209,7 +213,6 @@ async function setActivePage(nextKey) {
 
   /* Leave */
   prev.classList.add("page--leaving");
-
   await new Promise((r) => setTimeout(r, 180));
 
   /* Switch */
@@ -231,7 +234,6 @@ async function setActivePage(nextKey) {
   window.scrollTo({ top: 0, behavior: "auto" });
 
   updateNavActiveByPath();
-
   await new Promise((r) => setTimeout(r, 260));
 
   isTransitioning = false;
@@ -265,6 +267,7 @@ function parsePath(pathname) {
     return { page: "episode", id: decodeURIComponent(p.slice("/podcast/".length)) };
 
   if (p === "/projects") return { page: "projects" };
+  if (p === "/signal") return { page: "signal" }; // ✅ added
 
   return { page: "home" };
 }
@@ -304,6 +307,13 @@ function route(state) {
     return;
   }
 
+  if (state.page === "signal") {
+    setActivePage("signal");
+    // Load after page becomes active to avoid layout race
+    setTimeout(() => loadSignal(14), 0);
+    return;
+  }
+
   setActivePage("home");
 }
 
@@ -312,6 +322,7 @@ function navigateTo(url, state, { push = true } = {}) {
 
   /* Close mobile drawer when navigation happens */
   if (typeof window.__closeNavDrawer === "function") window.__closeNavDrawer();
+  if (typeof window.__closeMobileDrawer === "function") window.__closeMobileDrawer();
 
   /* If transition is running, queue navigation and update URL immediately to match intent */
   if (isTransitioning) {
@@ -337,6 +348,7 @@ window.addEventListener("popstate", (e) => {
 
   /* Close mobile drawer on back/forward */
   if (typeof window.__closeNavDrawer === "function") window.__closeNavDrawer();
+  if (typeof window.__closeMobileDrawer === "function") window.__closeMobileDrawer();
 
   updateNavActiveByPath(window.location.pathname);
   route(state);
@@ -384,11 +396,7 @@ function renderBlogList(posts) {
     `;
 
     const go = () => {
-      navigateTo(
-        `/blog/${encodeURIComponent(post.id)}`,
-        { page: "post", id: post.id },
-        { push: true }
-      );
+      navigateTo(`/blog/${encodeURIComponent(post.id)}`, { page: "post", id: post.id }, { push: true });
     };
 
     row.addEventListener("click", go);
@@ -423,9 +431,7 @@ function showBlogPost(postId, options = { push: true }) {
 
   if (contentEl) {
     const isMedium = post.source === "medium";
-    const bodyHtml = isMedium
-      ? `<div class="medium-article-body">${post.contentHtml}</div>`
-      : post.contentHtml;
+    const bodyHtml = isMedium ? `<div class="medium-article-body">${post.contentHtml}</div>` : post.contentHtml;
     contentEl.innerHTML = `${bodyHtml || "<p>(No content)</p>"}`;
   }
 
@@ -468,11 +474,7 @@ function renderRecentEpisodes(episodes = currentEpisodes) {
     `;
 
     const go = () => {
-      navigateTo(
-        `/podcast/${encodeURIComponent(ep.id)}`,
-        { page: "episode", id: ep.id },
-        { push: true }
-      );
+      navigateTo(`/podcast/${encodeURIComponent(ep.id)}`, { page: "episode", id: ep.id }, { push: true });
     };
 
     card.addEventListener("click", go);
@@ -509,11 +511,7 @@ function renderAllEpisodes(episodes = currentEpisodes) {
     `;
 
     const go = () => {
-      navigateTo(
-        `/podcast/${encodeURIComponent(ep.id)}`,
-        { page: "episode", id: ep.id },
-        { push: true }
-      );
+      navigateTo(`/podcast/${encodeURIComponent(ep.id)}`, { page: "episode", id: ep.id }, { push: true });
     };
 
     card.addEventListener("click", go);
@@ -533,11 +531,7 @@ function showEpisodePage(episodeId, options = { push: true }) {
   }
 
   if (options.push) {
-    history.pushState(
-      { page: "episode", id: episodeId },
-      "",
-      `/podcast/${encodeURIComponent(episodeId)}`
-    );
+    history.pushState({ page: "episode", id: episodeId }, "", `/podcast/${encodeURIComponent(episodeId)}`);
   }
 
   const titleEl = document.getElementById("episodeTitle");
@@ -572,6 +566,84 @@ function showEpisodePage(episodeId, options = { push: true }) {
 
   setActivePage("episode");
   updateNavActiveByPath();
+}
+
+/* ---------------------------
+   Signal (Daily digest)
+---------------------------- */
+
+async function loadSignal(days = 14) {
+  const el = document.getElementById("signalList");
+  if (!el) return;
+
+  el.innerHTML = `<div class="muted">Loading…</div>`;
+
+  try {
+    const res = await fetch(`/.netlify/functions/signal?days=${days}`);
+    if (!res.ok) throw new Error("Signal function failed");
+    const data = await res.json();
+
+    el.innerHTML = (data || [])
+      .map((day) => {
+        const items = (day.items || [])
+          .map(
+            (it) => `
+            <li class="signal-item">
+              <a href="${it.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.title)}</a>
+              <div class="signal-summary">${escapeHtml(it.summary || "")}</div>
+            </li>
+          `
+          )
+          .join("");
+
+        return `
+          <article class="signal-day">
+            <h3>${escapeHtml(day.label || "")}</h3>
+            <ul class="signal-items">${items}</ul>
+          </article>
+        `;
+      })
+      .join("");
+  } catch (e) {
+    console.error("[Signal] load failed:", e);
+    el.innerHTML = `<div class="muted">Failed to load.</div>`;
+  }
+}
+
+function initSignalSubscribe() {
+  const form = document.getElementById("signalSubscribeForm");
+  const input = document.getElementById("signalEmail");
+  if (!form || !input) return;
+
+  // Prevent double-binding if hot reload / multiple inits
+  if (form.dataset.bound === "1") return;
+  form.dataset.bound = "1";
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = String(input.value || "").trim();
+    if (!email) return;
+
+    try {
+      const res = await fetch("/.netlify/functions/signal-subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!res.ok) {
+        const t = await res.text();
+        alert("Subscribe failed. " + (t || ""));
+        return;
+      }
+
+      input.value = "";
+      alert("Subscribed!");
+    } catch (err) {
+      console.error("[Signal] subscribe failed:", err);
+      alert("Subscribe failed.");
+    }
+  });
 }
 
 /* ---------------------------
@@ -642,80 +714,9 @@ function initBackButtons() {
     else navigateTo(fallbackUrl, fallbackState, { push: true });
   };
 
-  if (postBackBtn)
-    postBackBtn.addEventListener("click", () => safeBack("/blog", { page: "blog" }));
+  if (postBackBtn) postBackBtn.addEventListener("click", () => safeBack("/blog", { page: "blog" }));
   if (episodeBackBtn)
     episodeBackBtn.addEventListener("click", () => safeBack("/podcast", { page: "podcast" }));
-}
-
-/* ---------------------------
-   Mobile Drawer
----------------------------- */
-
-function initMobileDrawer() {
-  const menuBtn = document.getElementById("menuBtn");
-  const drawer = document.getElementById("mobileDrawer");
-  const overlay = document.getElementById("drawerOverlay");
-  const closeBtn = document.getElementById("drawerCloseBtn");
-  const drawerLinks = document.getElementById("drawerLinks");
-
-  const sourceLinks = document.querySelector("nav .nav-links");
-
-  if (!menuBtn || !drawer || !overlay || !closeBtn || !drawerLinks || !sourceLinks) return;
-
-  // Clone nav links into drawer so desktop and mobile stay in sync
-  drawerLinks.innerHTML = `<ul class="drawer-list">${sourceLinks.innerHTML}</ul>`;
-
-  function openDrawer() {
-    drawer.classList.add("is-open");
-    drawer.setAttribute("aria-hidden", "false");
-    menuBtn.setAttribute("aria-expanded", "true");
-    document.documentElement.classList.add("no-scroll");
-    document.body.classList.add("no-scroll");
-  }
-
-  function closeDrawer() {
-    drawer.classList.remove("is-open");
-    drawer.setAttribute("aria-hidden", "true");
-    menuBtn.setAttribute("aria-expanded", "false");
-    document.documentElement.classList.remove("no-scroll");
-    document.body.classList.remove("no-scroll");
-  }
-
-  menuBtn.addEventListener("click", () => {
-    const isOpen = drawer.classList.contains("is-open");
-    if (isOpen) closeDrawer();
-    else openDrawer();
-  });
-
-  overlay.addEventListener("click", closeDrawer);
-  closeBtn.addEventListener("click", closeDrawer);
-
-  // Close drawer when clicking any drawer link
-  drawer.addEventListener("click", (e) => {
-    const a = e.target.closest("a[data-route]");
-    if (!a) return;
-    closeDrawer();
-  });
-
-  // Close on ESC
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && drawer.classList.contains("is-open")) {
-      closeDrawer();
-    }
-  });
-
-  // Expose a safe close hook for route changes if needed
-  window.__closeMobileDrawer = closeDrawer;
-    /* Auto-close drawer when viewport becomes desktop */
-    function syncMobileDrawerForDesktop() {
-      if (window.innerWidth > 720 && drawer.classList.contains("is-open")) {
-        closeDrawer();
-      }
-    }
-  
-    window.addEventListener("resize", syncMobileDrawerForDesktop);
-    window.addEventListener("orientationchange", syncMobileDrawerForDesktop);  
 }
 
 /* ---------------------------
@@ -731,14 +732,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   initMobileDrawerNav();
   initNavRouting();
-  initMobileDrawer();
   initBackButtons();
+  initSignalSubscribe(); // ✅ added
 
   const initial = parsePath(window.location.pathname);
   history.replaceState(initial, "", window.location.pathname);
 
   setActivePageImmediate(getPageKeyByPath(window.location.pathname));
-
   route(initial);
   updateNavActiveByPath();
 
@@ -748,19 +748,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Merge
   ALL_BLOG_POSTS = [...mediumPosts, ...localPosts];
 
-    // De-dupe: if a local post points to a Medium URL that exists in Medium feed, drop the local one
-    const mediumLinks = new Set(
-      (mediumPosts || [])
-        .map((p) => String(p.link || "").trim())
-        .filter(Boolean)
-    );
-  
-    ALL_BLOG_POSTS = ALL_BLOG_POSTS.filter((p) => {
-      const mu = String(p.mediumUrl || "").trim();
-      if (!mu) return true; // keep local-only posts
-      if (p.source === "medium") return true; // keep real Medium posts
-      return !mediumLinks.has(mu); // drop local duplicates
-    });  
+  // De-dupe: if a local post points to a Medium URL that exists in Medium feed, drop the local one
+  const mediumLinks = new Set(
+    (mediumPosts || [])
+      .map((p) => String(p.link || "").trim())
+      .filter(Boolean)
+  );
+
+  ALL_BLOG_POSTS = ALL_BLOG_POSTS.filter((p) => {
+    const mu = String(p.mediumUrl || "").trim();
+    if (!mu) return true; // keep local-only posts
+    if (p.source === "medium") return true; // keep real Medium posts
+    return !mediumLinks.has(mu); // drop local duplicates
+  });
 
   // Sort (newest first)
   ALL_BLOG_POSTS.sort((a, b) => {
@@ -774,6 +774,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   currentEpisodes = await fetchEpisodes();
   renderRecentEpisodes(currentEpisodes);
   renderAllEpisodes(currentEpisodes);
+
+  // If landing on /signal directly, load it once on boot
+  if (getPageKeyByPath(window.location.pathname) === "signal") {
+    loadSignal(14);
+  }
 
   hardSyncActiveClasses(activePageKey);
   updateNavActiveByPath();

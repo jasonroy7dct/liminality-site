@@ -11,6 +11,9 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@netlify/blobs@^10.5.0",
+        "npm:@supabase/supabase-js@^2.90.0",
+        "npm:resend@^6.6.0",
         "npm:rss-parser@^3.13.0"
       ]
     }
