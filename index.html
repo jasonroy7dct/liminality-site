@@ -47,11 +47,11 @@
       .nav-avatar {
         width: 34px;
         height: 34px;
-        border-radius: 999px;
+        border-radius: 50%;
         object-fit: cover;
         flex: 0 0 auto;
-        background: #f3f3f3;
-        border: 1px solid #e6e6e6;
+        background: #ede8e4;
+        border: 1px solid var(--border);
       }
 
       /* About: keep text width stable and overlay avatar */
@@ -71,14 +71,14 @@
       .about-avatar {
         width: 104px;
         height: 104px;
-        border-radius: 999px;
+        border-radius: 50%;
         object-fit: cover;
         position: absolute;
         right: 0;
         top: -54px; /* overlap banner a bit */
-        border: 2px solid #ffffff;
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
-        background: #f3f3f3;
+        border: 4px solid var(--bg);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        background: #ede8e4;
       }
 
       @media (max-width: 600px) {
@@ -97,7 +97,7 @@
 
   <body>
     <nav>
-      <div class="container nav-inner">
+      <div class="nav-container nav-inner">
         <div class="brand">
           <img class="nav-avatar" src="/img/avatar.jpg" alt="Jason Hsieh" />
           <a class="logo" href="/" data-route="/">jasonroy7dct</a>
@@ -109,7 +109,8 @@
           <li><a href="/blog" data-route="/blog">Blog</a></li>
           <li><a href="/podcast" data-route="/podcast">Podcast</a></li>
           <li><a href="/projects" data-route="/projects">Projects</a></li>
-          <li><a href="/rumination/">Rumination</a></li>
+          <li><a href="/journeys" data-route="/journeys">Journeys</a></li>
+          <li><a href="/rumination" data-route="/rumination">Rumination</a></li>
         </ul>
 
         <!-- Mobile menu icon (hamburger) -->
@@ -134,7 +135,8 @@
             <li><a href="/blog" data-route="/blog">Blog</a></li>
             <li><a href="/podcast" data-route="/podcast">Podcast</a></li>
             <li><a href="/projects" data-route="/projects">Projects</a></li>
-            <li><a href="/rumination/">Rumination</a></li>
+            <li><a href="/journeys" data-route="/journeys">Journeys</a></li>
+            <li><a href="/rumination" data-route="/rumination">Rumination</a></li>
           </ul>
 
           <!-- Mobile menu button (only visible on small screens) -->
@@ -162,14 +164,18 @@
       <main id="app" class="container app">
         <!-- HOME PAGE (banner + about only) -->
         <section id="page-home" class="page" data-page="home" aria-hidden="true">
-          <div class="nyc-banner">
-            <div class="nyc-banner-inner">
-              <h1 class="type-target" data-type-speed="28">jasonroy7dct</h1>
-              <p class="banner-subtitle type-target processing" data-type-speed="18">
+          <header class="masthead">
+            <h1 class="masthead-title type-target" data-type-speed="28">jasonroy7dct</h1>
+            <div class="masthead-meta">
+              <span class="masthead-tag">Est. 2026</span>
+              <span class="masthead-divider"></span>
+              <p class="masthead-subtitle type-target processing" data-type-speed="18">
                 A small corner for writing, building, and audio.
               </p>
             </div>
-          
+          </header>
+
+          <div class="nyc-banner-photo">
             <!-- Banner avatar (bottom-right) -->
             <img class="banner-avatar" src="/img/avatar.jpg" alt="Jason Hsieh" />
           </div>          
@@ -324,23 +330,145 @@
         <section id="page-projects" class="page" data-page="projects" aria-hidden="true">
           <header class="page-header projects-header">
             <h2>Projects</h2>
+            <p class="muted">Software releases &amp; tools.</p>
+          </header>
+
+          <div class="product-page">
+            <!-- Hero Announcement Block -->
+            <div class="product-hero">
+              <div class="product-info">
+                <span class="product-badge">v1.0.4 Release</span>
+                <div class="product-title-row">
+                  <img class="product-icon" src="/img/fire-icon.png" alt="Road to FIRE Icon" />
+                  <h3 class="product-h3">Road to FIRE</h3>
+                </div>
+                <p class="product-tagline">
+                  A Chrome Extension designed to suppress impulse spending by converting e-commerce prices into ETF share equivalents (VOO, SPY, 0050) on-the-fly.
+                </p>
+                
+                <div class="product-highlights">
+                  <div class="highlight-item">
+                    <span class="highlight-num">01 /</span>
+                    <span class="highlight-text">Price Interception Engine</span>
+                  </div>
+                  <div class="highlight-item">
+                    <span class="highlight-num">02 /</span>
+                    <span class="highlight-text">Multi-Market Resolution</span>
+                  </div>
+                  <div class="highlight-item">
+                    <span class="highlight-num">03 /</span>
+                    <span class="highlight-text">Compound Growth Projection</span>
+                  </div>
+                </div>
+
+                <div class="product-actions">
+                  <a href="https://chromewebstore.google.com/detail/road-to-fire/ljlhkgcnmnjkhcicjmcdebkbcmagiaef" target="_blank" rel="noopener noreferrer" class="product-btn-primary">
+                    Install Chrome Extension ↗
+                  </a>
+                </div>
+              </div>
+              
+              <div class="product-hero-visual">
+                <div class="browser-mockup">
+                  <div class="browser-bar">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="browser-url">chrome-extension://road-to-fire/dashboard.html</span>
+                  </div>
+                  <img src="/img/fire-dashboard.png" alt="Road to FIRE Dashboard" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Deep Dive Alternating Section -->
+            <div class="product-showcase-sections">
+              <div class="showcase-section">
+                <div class="showcase-content">
+                  <span class="showcase-meta">Interface</span>
+                  <h4>Visualizing Saved Capital</h4>
+                  <p>
+                    The extension intercepts purchase paths on major e-commerce platforms. Instead of seeing a checkout price, it displays how many hours of life or ETF index fractions you are trading away, prompting deliberate financial decisions.
+                  </p>
+                </div>
+                <div class="showcase-visual">
+                  <div class="hardware-frame">
+                    <img src="/img/fire-widget.png" alt="Compounding widget preview" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="showcase-section alt">
+                <div class="showcase-visual">
+                  <div class="hardware-frame">
+                    <img src="/img/fire-popup.png" alt="Extension popup menu" />
+                  </div>
+                </div>
+                <div class="showcase-content">
+                  <span class="showcase-meta">Analytics</span>
+                  <h4>Personal FIRE Dashboard</h4>
+                  <p>
+                    Track avoided expenditures inside your browser. Every suppressed impulse purchase is logged and compiled into a localized wealth growth projection chart, directly mapping your distance to financial freedom.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Spec Sheet (Technical specifications table) -->
+            <div class="product-specs-container">
+              <div class="specs-header">
+                <h4>System Specifications</h4>
+                <p class="muted">Technical breakdown &amp; runtime parameters.</p>
+              </div>
+              <table class="specs-table">
+                <tbody>
+                  <tr>
+                    <th>Architecture</th>
+                    <td>Manifest V3 Chrome Extension, local-first engine</td>
+                  </tr>
+                  <tr>
+                    <th>Price Resolution</th>
+                    <td>Synchronous price-parsing algorithm with regional locale formatting</td>
+                  </tr>
+                  <tr>
+                    <th>Supported Indices</th>
+                    <td>VOO (Vanguard S&amp;P 500), SPY, QQQ, TSM, 0050 (元大台灣50), 2330</td>
+                  </tr>
+                  <tr>
+                    <th>Data Privacy</th>
+                    <td>Zero external database dependency. 100% Client-side sandbox isolation.</td>
+                  </tr>
+                  <tr>
+                    <th>Dependencies</th>
+                    <td>Pure Javascript vanilla implementation. Zero remote execution scripts.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- JOURNEYS PAGE -->
+        <section id="page-journeys" class="page" data-page="journeys" aria-hidden="true">
+          <header class="page-header journeys-header">
+            <h2>Journeys</h2>
             <p class="muted">All the dots.</p>
           </header>
 
           <div class="projects-wide">
             <div class="travel-grid" aria-label="Travel gallery">
               <button class="travel-card" type="button" data-full="/img/nyc-01.jpg" data-caption="New York City">
-                <img src="/img/nyc-01.jpg" alt="New York City" loading="lazy" />
+                <img src="/img/nyc-01.jpg" alt="New York City" />
                 <span class="travel-caption">New York City</span>
               </button>
 
               <button class="travel-card" type="button" data-full="/img/brooklyn-01.jpg" data-caption="Brooklyn, NYC">
-                <img src="/img/brooklyn-01.jpg" alt="Brooklyn" loading="lazy" />
+                <img src="/img/brooklyn-01.jpg" alt="Brooklyn" />
                 <span class="travel-caption">Brooklyn, NYC</span>
               </button>
 
               <button class="travel-card" type="button" data-full="/img/la-01.jpg" data-caption="Los Angeles">
-                <img src="/img/la-01.jpg" alt="Los Angeles" loading="lazy" />
+                <img src="/img/la-01.jpg" alt="Los Angeles" />
                 <span class="travel-caption">Los Angeles</span>
               </button>
 
@@ -452,6 +580,165 @@
           </div>
         </section>
 
+        <!-- RUMINATION BREAKER PAGE -->
+        <section id="page-rumination" class="page" data-page="rumination" aria-hidden="true">
+          <header class="page-header">
+            <h2>Rumination Breaker</h2>
+            <p class="muted">Paste what’s looping in your head. The AI agent will name the pattern and reduce it to one doable action.</p>
+          </header>
+
+          <div class="kpis" aria-label="Overview">
+            <div class="kpi">
+              <div class="kpi-label">Total entries</div>
+              <div id="rb-kpi-total" class="kpi-value">0</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Top pattern</div>
+              <div id="rb-kpi-top" class="kpi-value">—</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Last run</div>
+              <div id="rb-kpi-last" class="kpi-value">—</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Done today</div>
+              <div id="rb-kpi-done" class="kpi-value">0</div>
+            </div>
+          </div>
+
+          <div class="card" id="rb-section-input">
+            <label class="label" for="rb-input">What keeps looping right now?</label>
+            <textarea id="rb-input" class="textarea" rows="7" placeholder="Type/paste your thoughts here…"></textarea>
+            <div class="row between">
+              <div class="muted smalltext"><span id="rb-count">0</span> chars</div>
+              <div class="muted smalltext">Tip: aim for 2–6 sentences.</div>
+            </div>
+
+            <div class="chips" aria-label="Quick start">
+              <button class="chip" type="button" data-template="career">Career loop</button>
+              <button class="chip" type="button" data-template="money">Money loop</button>
+              <button class="chip" type="button" data-template="relationship">Relationship loop</button>
+              <button class="chip" type="button" data-template="health">Health loop</button>
+              <button class="chip subtle" type="button" data-template="blank">Clear + start</button>
+            </div>
+
+            <div class="row wrap">
+              <select id="rb-lang" class="select" aria-label="Output language">
+                <option value="auto">Auto</option>
+                <option value="zh-Hant">繁體中文</option>
+                <option value="en">English</option>
+              </select>
+              <button id="rb-run" class="btn primary" type="button">Analyze</button>
+              <button id="rb-redo-strict" class="btn" type="button" disabled>Redo (strict)</button>
+              <button id="rb-save" class="btn" type="button" disabled>Save</button>
+              <button id="rb-save-done" class="btn primary" type="button" disabled>Save &amp; Mark done</button>
+              <button id="rb-clear" class="btn danger" type="button">Clear</button>
+            </div>
+
+            <p id="rb-status" class="status" aria-live="polite"></p>
+            <details class="hint">
+              <summary>Privacy note</summary>
+              <p>Your history is stored in your browser (localStorage). Nothing is published. The AI request only includes the current text plus short summaries of up to 3 similar past entries.</p>
+            </details>
+          </div>
+
+          <div class="grid" id="rb-section-output">
+            <div class="card">
+              <div class="cardhead">
+                <h3 class="h3">Similar past loops</h3>
+                <div class="small">Top 3 matches from your local history</div>
+
+                <div class="row wrap simtools" aria-label="Similarity mode">
+                  <label class="small" for="rb-sim-mode">Similarity:</label>
+                  <select id="rb-sim-mode" class="select">
+                    <option value="mixed">混合</option>
+                    <option value="zh">只中文</option>
+                    <option value="en">只英文</option>
+                  </select>
+                </div>
+              </div>
+              <div id="rb-memories" class="list"></div>
+            </div>
+
+            <div class="card">
+              <div class="cardhead">
+                <h3 class="h3">Agent output</h3>
+                <div class="small">Structured, time-boxed, one action only</div>
+              </div>
+
+              <div id="rb-insights" class="insights muted"></div>
+
+              <div id="rb-output" class="output empty">
+                <p class="muted">Run the agent to see results here.</p>
+              </div>
+
+              <div class="row wrap outtools" aria-label="Copy tools">
+                <button id="rb-copy-action" class="btn" type="button" disabled>Copy action</button>
+                <button id="rb-copy-followup" class="btn" type="button" disabled>Copy follow-up</button>
+                <button id="rb-copy-json" class="btn" type="button" disabled>Copy JSON</button>
+              </div>
+
+              <div class="row wrap">
+                <button id="rb-export" class="btn" type="button">Export</button>
+                <label class="btn filebtn" for="rb-import">Import</label>
+                <input id="rb-import" class="fileinput" type="file" accept="application/json" />
+                <button id="rb-wipe" class="btn danger" type="button">Wipe history</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="rb-section-history">
+            <div class="cardhead">
+              <h3 class="h3">History</h3>
+              <div class="small">Stored locally. Search and filter.</div>
+            </div>
+
+            <div class="row wrap">
+              <input id="rb-search" class="input" type="text" placeholder="Search…" />
+              <select id="rb-filter" class="select">
+                <option value="all">All</option>
+                <option value="comparison">comparison</option>
+                <option value="future_projection">future_projection</option>
+                <option value="perfectionism">perfectionism</option>
+                <option value="uncertainty_loop">uncertainty_loop</option>
+                <option value="identity_threat">identity_threat</option>
+                <option value="other">other</option>
+              </select>
+              <select id="rb-status-filter" class="select">
+                <option value="all">All</option>
+                <option value="pinned">Pinned</option>
+                <option value="todo">To do</option>
+                <option value="done">Done</option>
+              </select>
+              <select id="rb-sort" class="select">
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+              </select>
+            </div>
+
+            <div class="row wrap pager" aria-label="Pagination">
+              <button id="rb-page-prev" class="btn" type="button">Prev</button>
+              <div class="small" id="rb-page-info">Page 1</div>
+              <button id="rb-page-next" class="btn" type="button">Next</button>
+              <select id="rb-page-size" class="select" aria-label="Page size">
+                <option value="10">10 / page</option>
+                <option value="20">20 / page</option>
+                <option value="50">50 / page</option>
+              </select>
+            </div>
+
+            <div class="row wrap bulktools" aria-label="Bulk actions">
+              <button id="rb-select-page" class="btn" type="button">Select page</button>
+              <button id="rb-clear-selection" class="btn" type="button" disabled>Clear selection</button>
+              <button id="rb-delete-selected" class="btn danger" type="button" disabled>Delete selected</button>
+              <button id="rb-delete-filtered" class="btn danger" type="button">Delete filtered</button>
+              <div class="small" id="rb-selection-info">0 selected</div>
+            </div>
+
+            <div id="rb-history" class="history"></div>
+          </div>
+        </section>
+
         <footer>
           <p>© <span id="year"></span> jasonroy7dct</p>
         </footer>
@@ -465,6 +752,31 @@
             <div id="lightboxCaption" class="lightbox-caption"></div>
           </div>
         </div>
+
+        <!-- Rumination elements -->
+        <div id="rb-backdrop" class="backdrop" aria-hidden="true"></div>
+
+        <div id="rb-modal" class="modal hidden" aria-hidden="true" role="dialog" aria-modal="true">
+          <div id="rb-modal-backdrop" class="modal-backdrop"></div>
+          <div class="modal-card" role="document" aria-label="Entry preview">
+            <div class="modal-head">
+              <div>
+                <h3 id="rb-modal-title" class="h3">Entry</h3>
+                <div class="small" id="rb-modal-meta"></div>
+              </div>
+              <button id="rb-modal-close" class="iconbtn modal-close" type="button" aria-label="Close">×</button>
+            </div>
+
+            <div class="modal-body" id="rb-modal-body"></div>
+
+            <div class="row wrap modal-actions">
+              <button id="rb-modal-copy" class="btn" type="button">Copy</button>
+              <button id="rb-modal-delete" class="btn danger" type="button">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="rb-toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
         <script>
           window.addEventListener("DOMContentLoaded", function () {
@@ -517,6 +829,7 @@
     </div>
 
     <script src="/posts.js"></script>
+    <script src="/rumination/rumination.js" defer></script>
     <script src="/main.js"></script>
   </body>
 </html>

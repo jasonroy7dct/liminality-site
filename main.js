@@ -108,6 +108,8 @@ const pages = {
   podcast: document.getElementById("page-podcast"),
   episode: document.getElementById("page-episode"),
   projects: document.getElementById("page-projects"),
+  journeys: document.getElementById("page-journeys"),
+  rumination: document.getElementById("page-rumination"),
   signal: document.getElementById("page-signal"), // ✅ added
 };
 
@@ -126,6 +128,8 @@ function getPageKeyByPath(pathname) {
   if (p === "/podcast") return "podcast";
   if (p.startsWith("/podcast/")) return "episode";
   if (p === "/projects") return "projects";
+  if (p === "/journeys") return "journeys";
+  if (p === "/rumination") return "rumination";
   if (p === "/signal") return "signal"; // ✅ added
   return "home";
 }
@@ -146,6 +150,8 @@ function updateNavActiveByPath(pathname = window.location.pathname) {
     if (route === "/blog") shouldActive = key === "blog" || key === "post";
     if (route === "/podcast") shouldActive = key === "podcast" || key === "episode";
     if (route === "/projects") shouldActive = key === "projects";
+    if (route === "/journeys") shouldActive = key === "journeys";
+    if (route === "/rumination") shouldActive = key === "rumination";
     if (route === "/signal") shouldActive = key === "signal"; // ✅ added
 
     a.classList.toggle("active", shouldActive);
@@ -267,6 +273,8 @@ function parsePath(pathname) {
     return { page: "episode", id: decodeURIComponent(p.slice("/podcast/".length)) };
 
   if (p === "/projects") return { page: "projects" };
+  if (p === "/journeys") return { page: "journeys" };
+  if (p === "/rumination") return { page: "rumination" };
   if (p === "/signal") return { page: "signal" }; // ✅ added
 
   return { page: "home" };
@@ -304,6 +312,16 @@ function route(state) {
 
   if (state.page === "projects") {
     setActivePage("projects");
+    return;
+  }
+
+  if (state.page === "journeys") {
+    setActivePage("journeys");
+    return;
+  }
+
+  if (state.page === "rumination") {
+    setActivePage("rumination");
     return;
   }
 
